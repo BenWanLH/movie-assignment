@@ -1,0 +1,9 @@
+[submodule "people-service"]
+	path = people-service
+	url = https://github.com/BenWanLH/people-service.git
+[submodule "movie-service"]
+	path = movie-service
+	url = https://github.com/BenWanLH/movie-service.git
+[submodule "movie-web"]
+	path = movie-web
+	url = https://github.com/BenWanLH/movie-web.git
