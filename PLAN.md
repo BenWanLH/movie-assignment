@@ -41,19 +41,19 @@
 
 | Repo | Contents |
 |---|---|
-| `protos` | `.proto` files only (`people/v1/people.proto`, `common/v1/page.proto`), optional `buf.yaml` for linting, README |
-| `movie-service` | Kotlin Spring Boot app. `protos` is a submodule at `proto/` |
-| `people-service` | Kotlin Spring Boot app. `protos` is a submodule at `proto/` |
+| `protos` | `.proto` files only (`people/v1/people.proto`), optional `buf.yaml` for linting, README |
+| `movie-service` | Kotlin Spring Boot app. `protos` is a submodule at `protos/` |
+| `people-service` | Kotlin Spring Boot app. `protos` is a submodule at `protos/` |
 | `movie-web` | SvelteKit + TypeScript app |
 | `movie-assignment` (umbrella, local folder `ecda`) | The main README and `PLAN.md`, plus an optional `docker-compose.yml`. `people-service`, `movie-service` and `movie-web` are its submodules. `protos` isn't listed, because it comes in nested inside each service. This gives the assessors the single repository the PDF asks for. One `git clone --recurse-submodules` brings in everything, including the nested `protos`. |
 
 **How the submodule works:**
-- Each service adds `proto/` as an extra proto source dir for `com.google.protobuf` (protobuf-gradle-plugin):
+- Each service adds `protos/` as an extra proto source dir for `com.google.protobuf` (protobuf-gradle-plugin):
   ```kotlin
-  sourceSets { main { proto { srcDir("proto") } } }
+  sourceSets { main { proto { srcDir("protos") } } }
   ```
 - The plugins `grpc-java` and `grpc-kotlin` generate the stubs during `./gradlew build`. Generated code is never committed.
-- A submodule pins an exact commit. Bump it with `git submodule update --remote proto`, then commit the new pointer in each service. This explicit contract versioning is a good talking point in the walkthrough.
+- A submodule pins an exact commit. Bump it with `git submodule update --remote protos`, then commit the new pointer in each service. This explicit contract versioning is a good talking point in the walkthrough.
 - **Gotchas to document:**
   - Clone with `--recurse-submodules`.
   - Each Dockerfile builds from a checkout where the submodule is present.
@@ -134,13 +134,13 @@ Use the latest stable versions available when each project is set up.
 
 ### Phase 0: Setup
 - [x] T0.1 Create the 4 repos plus the umbrella `movie-assignment` (3 app submodules). Add `PLAN.md`, the umbrella README and `.gitignore`, and an initial README, `.gitignore` and `.tool-versions` in each repo.
-- [ ] T0.2 Local tooling via asdf (project `.tool-versions`): Java zulu-21.54.107, Node 22.23.4. Plus `grpcurl` (brew). `buf` optional.
+- [x] T0.2 Local tooling via asdf (project `.tool-versions`): Java `openjdk-21`, Node `22.23.4`. Plus `grpcurl` (brew). `buf` optional.
 
 ### Phase 1: Contract (`protos`)
-- [ ] T1.1 Write `people.proto` and `page.proto` (optionally lint with `buf`).
+- [x] T1.1 Write `people.proto` (optionally lint with `buf`).
 
 ### Phase 2: people-service (learn gRPC)
-- [ ] T2.1 Spring Boot skeleton. Add the `protos` repo as a submodule at `proto/` and get stubs generating. H2 and Flyway `person` table.
+- [x] T2.1 Spring Boot skeleton. Add the `protos` repo as a submodule at `protos/` and get stubs generating. H2 and Flyway `person` table.
 - [ ] T2.2 Domain + repository + service layer, with validation
 - [ ] T2.3 gRPC server implementing all RPCs, with error → `Status` mapping and reflection on. Verify with `grpcurl`.
 - [ ] T2.4 Tests:
@@ -149,7 +149,7 @@ Use the latest stable versions available when each project is set up.
   - repository tests (`@DataJpaTest`, H2)
 
 ### Phase 3: movie-service (learn GraphQL + gRPC client)
-- [ ] T3.1 Skeleton, `protos` repo as a submodule at `proto/`, H2 and Flyway (`movie`, `credit` tables)
+- [ ] T3.1 Skeleton, `protos` repo as a submodule at `protos/`, H2 and Flyway (`movie`, `credit` tables)
 - [ ] T3.2 GraphQL schema + Person queries and mutations proxied to people-service over gRPC. Try them in GraphiQL.
 - [ ] T3.3 Movie CRUD + credits + `@BatchMapping` for credit → person
 - [ ] T3.4 Artwork: multipart `Upload` handler, validation, disk storage, `GET /artwork/{id}`
