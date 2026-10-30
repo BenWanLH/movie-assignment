@@ -86,20 +86,20 @@ Use the latest stable versions available when each project is set up.
 
 **`people/v1/people.proto`:** `PeopleService` with these RPCs:
 - `CreatePerson`, `GetPerson`, `BatchGetPeople`, `UpdatePerson`, `DeletePerson`
-- `ListPeople(page, role filter)`, `SearchPeople(query, page)`
+- `ListPeople()`, `SearchPeople(name)`
 
-`Person` fields: `id`, `name`, `bio`, `birth_date`, `roles` (ACTOR / DIRECTOR / WRITER / CREATOR), `photo_url`.
+`Person` fields: `id`, `name`, `roles` (ACTOR / DIRECTOR / WRITER / CREATOR), `birthDate`, `bio`, `photoUrl`.
 
 **GraphQL (movie-service):**
 - **Types:**
   - `Movie { id title synopsis releaseYear runtimeMinutes genres artworkUrl credits { person role characterName } }`
   - `Person`
   - `union SearchResult = Movie | Person`
-- **Queries:** `movies(page, filter, sort)`, `movie(id)`, `people(page, role)`, `person(id)`, `search(query, first)`
+- **Queries:** `movies(filter, sort)`, `movie(id)`, `people(roles)`, `person(id)`, `search(query)`
 - **Mutations:**
   - `create/update/deleteMovie`, `uploadArtwork(movieId, file: Upload)`
   - `create/update/deletePerson`, `add/removeCredit`
-- **Pagination:** cursor or offset with a `pageInfo` and `totalCount`. Offset is simpler to explain.
+- **Pagination:** not in v1
 
 ## Suggestions, since gRPC and GraphQL are new to you
 1. **Write the contracts first.** Do the `.proto` and the `.graphqls` before any code. Both are schema-first technologies, and the generated or validated code follows from them.
@@ -119,7 +119,7 @@ Use the latest stable versions available when each project is set up.
 5. **Keep a `NOTES.md` of "why" decisions as you go.** It feeds the README's AI section and prepares you for the walkthrough.
 
 ## Extra features (functionality item 7)
-- Pagination, sorting, genre/year filters
+- Sorting, genre/year filters
 - Linking cast and crew to movies with a role and character name
 - Debounced search-as-you-type
 - Delete confirmation dialog
@@ -141,12 +141,21 @@ Use the latest stable versions available when each project is set up.
 
 ### Phase 2: people-service (learn gRPC)
 - [x] T2.1 Spring Boot skeleton. Add the `protos` repo as a submodule at `protos/` and get stubs generating. H2 and Flyway `person` table.
-- [ ] T2.2 Domain + repository + service layer, with validation
-- [ ] T2.3 gRPC server implementing all RPCs, with error → `Status` mapping and reflection on. Verify with `grpcurl`.
-- [ ] T2.4 Tests:
+- [x] T2.2 Domain + repository + service layer, with validation
+- [x] T2.3 gRPC server implementing all RPCs, with error → `Status` mapping and reflection on. Verify with `grpcurl`.
+- [x] T2.4 Tests:
   - service unit tests (MockK)
-  - in-process gRPC tests: not found, invalid input, empty batch, duplicate ids, pagination bounds, blank search
-  - repository tests (`@DataJpaTest`, H2)
+  - gRPC service tests (`@SpringBootTest`, in-memory H2): not found, invalid input, unknown and duplicate batch ids
+  - Not covered:
+    - search: case-insensitive and partial match, blank input over gRPC, `%` / `_` treated as text
+    - full field round-trip: roles, birthDate, bio, photoUrl
+    - delete, then get → `NOT_FOUND`; deleting a person with roles (cascade on `person_role`)
+    - update: `""` clears bio/photoUrl/birthDate; invalid input on update
+    - createPerson blank bio → `null` (current unit test only passes the default `null`)
+    - `getPersonById` found, `deletePerson` on an existing id (service unit tests)
+    - over-length fields (no `@Size`, a too-long value surfaces as `INTERNAL`)
+    - empty `BatchGetPeople` request, `ListPeople`
+    - over the wire via a real gRPC client (status codes and descriptions as a caller sees them)
 
 ### Phase 3: movie-service (learn GraphQL + gRPC client)
 - [ ] T3.1 Skeleton, `protos` repo as a submodule at `protos/`, H2 and Flyway (`movie`, `credit` tables)
@@ -163,7 +172,7 @@ Use the latest stable versions available when each project is set up.
 
 ### Phase 4: movie-web
 - [ ] T4.1 SvelteKit + TS + Tailwind + urql + codegen. Layout and navigation, responsive.
-- [ ] T4.2 Movies: grid with artwork, pagination, skeletons, empty and error states
+- [ ] T4.2 Movies: grid with artwork, skeletons, empty and error states
 - [ ] T4.3 Movie create/edit form with validation, delete confirmation, toasts
 - [ ] T4.4 Artwork upload: XHR with a progress bar, preview, cancel, error display
 - [ ] T4.5 People list plus CRUD, and credit management on the movie page
