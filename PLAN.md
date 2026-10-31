@@ -16,9 +16,9 @@
 
 ```
                  GraphQL (HTTP POST /graphql)
- ┌──────────────┐  queries / mutations / multipart upload  ┌──────────────────┐   gRPC (HTTP/2, protobuf)  ┌──────────────────┐
+ ┌──────────────┐  queries / mutations                     ┌──────────────────┐   gRPC (HTTP/2, protobuf)  ┌──────────────────┐
  │  movie-web   │ ───────────────────────────────────────▶ │  movie-service   │ ─────────────────────────▶ │  people-service  │
- │  SvelteKit+TS│ ◀─── GET /artwork/{file} (img src) ───── │  Spring GraphQL  │                            │  Spring gRPC srv │
+ │  SvelteKit+TS│ ◀──▶ REST /movies/{id}/artwork ───────── │  Spring GraphQL  │                            │  Spring gRPC srv │
  └──────────────┘                                          │  gRPC client     │                            │  H2: people      │
                                                            │  H2: movies      │                            └──────────────────┘
                                                            │  disk: artwork   │
@@ -70,8 +70,9 @@ Use the latest stable versions available when each project is set up.
 - **Validation:** Jakarta Validation on inputs. Domain errors map to GraphQL errors (`DataFetcherExceptionResolverAdapter`) and to gRPC `Status` codes (`NOT_FOUND`, `INVALID_ARGUMENT`).
 
 **Artwork upload**
-- Upload through GraphQL using the GraphQL multipart request spec, with an `Upload` scalar. Spring GraphQL doesn't support this out of the box, so we add a small multipart handler on `/graphql`.
-- **Server side:** validate type (jpeg/png/webp), validate size (≤ 5 MB), store on disk under a volume, and serve images read-only over `GET /artwork/{id}`.
+- Upload over a REST endpoint, `POST /movies/{id}/artwork` (`multipart/form-data`, field `file`). Spring for GraphQL doesn't support the GraphQL multipart request spec.
+- **Server side:** validate type (jpeg/png/webp) and size (≤ 5 MB), store on disk under a UUID filename, and serve over `GET /movies/{id}/artwork`.
+- GraphQL exposes `Movie.artworkUrl` (`/movies/{id}/artwork?v=<filename>`, the filename busts the browser cache on re-upload).
 - The frontend sends the upload with `XMLHttpRequest`. Unlike `fetch`, it fires `upload.onprogress` events, which drive a real progress bar.
 
 **Frontend**
@@ -97,7 +98,7 @@ Use the latest stable versions available when each project is set up.
   - `union SearchResult = Movie | Person`
 - **Queries:** `movies(filter, sort)`, `movie(id)`, `people(roles)`, `person(id)`, `search(query)`
 - **Mutations:**
-  - `create/update/deleteMovie`, `uploadArtwork(movieId, file: Upload)`
+  - `create/update/deleteMovie`
   - `create/update/deletePerson`, `add/removeCredit`
 - **Pagination:** not in v1
 
@@ -158,10 +159,10 @@ Use the latest stable versions available when each project is set up.
     - over the wire via a real gRPC client (status codes and descriptions as a caller sees them)
 
 ### Phase 3: movie-service (learn GraphQL + gRPC client)
-- [ ] T3.1 Skeleton, `protos` repo as a submodule at `protos/`, H2 and Flyway (`movie`, `credit` tables)
-- [ ] T3.2 GraphQL schema + Person queries and mutations proxied to people-service over gRPC. Try them in GraphiQL.
-- [ ] T3.3 Movie CRUD + credits + `@BatchMapping` for credit → person
-- [ ] T3.4 Artwork: multipart `Upload` handler, validation, disk storage, `GET /artwork/{id}`
+- [x] T3.1 Skeleton, `protos` repo as a submodule at `protos/`, H2 and Flyway (`movie`, `credit` tables)
+- [x] T3.2 GraphQL schema + Person queries and mutations proxied to people-service over gRPC. Try them in GraphiQL.
+- [x] T3.3 Movie CRUD + credits + `@BatchMapping` for credit → person
+- [x] T3.4 Artwork: REST `POST` / `GET /movies/{id}/artwork`, validation, disk storage, `Movie.artworkUrl`
 - [ ] T3.5 Unified search (coroutines, parallel local search + gRPC call)
 - [ ] T3.6 Error handling: map gRPC `Status` codes and domain errors to GraphQL errors. Handle people-service being unavailable gracefully.
 - [ ] T3.7 Tests:
@@ -191,6 +192,12 @@ Use the latest stable versions available when each project is set up.
   - an "How AI tools were used" section
   - each repo's own README
 - [ ] T5.4 Final pass: run every test suite, test on mobile width, dry-run the walkthrough script
+
+### Enhancements (beyond v1)
+- [ ] E1 Orphaned credits: calling `DeletePerson` directly on people-service (not via movie-service) leaves that person's credits in movie-service. Options:
+  - people-service publishes a `PersonDeleted` event that movie-service consumes to remove credits
+  - movie-service treats people missing from `BatchGetPeople` as unknown and skips or cleans up those credits
+- [ ] E2 Person photo upload: REST `POST /people/{id}/photo` in movie-service, reusing the artwork upload and storage, then `UpdatePerson` with the served URL as `photoUrl`; frontend progress bar like the artwork upload
 
 ## Verification
 - **people-service:** `./gradlew test` passes. `grpcurl -plaintext localhost:9090 list` shows `PeopleService`. CRUD works through `grpcurl`.
