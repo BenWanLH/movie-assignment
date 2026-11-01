@@ -163,8 +163,8 @@ Use the latest stable versions available when each project is set up.
 - [x] T3.3 Movie CRUD + credits + `@BatchMapping` for credit → person
 - [x] T3.4 Artwork: REST `POST` / `GET /movies/{id}/artwork`, validation, disk storage, `Movie.artworkUrl`
 - [x] T3.5 Search: optional `title` on `movies` and `name` on `people` (gRPC `SearchPeople`), combinable with the `roles` filter
-- [ ] T3.6 Error handling: map gRPC `Status` codes and domain errors to GraphQL errors. Handle people-service being unavailable gracefully.
-- [ ] T3.7 Tests:
+- [x] T3.6 Error handling: map gRPC `Status` codes and domain errors to GraphQL errors. Handle people-service being unavailable gracefully.
+- [x] T3.7 Tests:
   - unit tests (MockK the gRPC stub)
   - `GraphQlTester` tests
   - upload edge cases: wrong type, too large, empty file, unknown movie
