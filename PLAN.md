@@ -33,7 +33,7 @@
   - **Movie → credits → person names:** `BatchGetPeople(ids)`. Spring GraphQL `@BatchMapping` turns this into one call per query rather than one per movie. This avoids the N+1 problem.
   - **Add a credit:** check that the person exists with `GetPerson`.
   - **Delete a person:** call `DeletePerson` over gRPC, then remove that person's credits locally.
-  - **Unified search:** search movies locally and call `SearchPeople` over gRPC in parallel (Kotlin coroutines), then merge the results into a GraphQL union.
+  - **People search:** `people(name)` calls `SearchPeople` over gRPC. Movie search (`movies(title)`) stays local.
 
 > **Optional upgrade:** if we later want 3 services, split the GraphQL layer into its own gateway. The proto contract and people-service stay the same.
 
@@ -95,8 +95,7 @@ Use the latest stable versions available when each project is set up.
 - **Types:**
   - `Movie { id title synopsis releaseYear runtimeMinutes genres artworkUrl credits { person role characterName } }`
   - `Person`
-  - `union SearchResult = Movie | Person`
-- **Queries:** `movies(filter, sort)`, `movie(id)`, `people(roles)`, `person(id)`, `search(query)`
+- **Queries:** `movies(title, filter, sort)`, `movie(id)`, `people(roles, name)`, `person(id)`. Search is an optional text argument on each list query; there is no global search.
 - **Mutations:**
   - `create/update/deleteMovie`
   - `create/update/deletePerson`, `add/removeCredit`
@@ -163,13 +162,13 @@ Use the latest stable versions available when each project is set up.
 - [x] T3.2 GraphQL schema + Person queries and mutations proxied to people-service over gRPC. Try them in GraphiQL.
 - [x] T3.3 Movie CRUD + credits + `@BatchMapping` for credit → person
 - [x] T3.4 Artwork: REST `POST` / `GET /movies/{id}/artwork`, validation, disk storage, `Movie.artworkUrl`
-- [ ] T3.5 Unified search (coroutines, parallel local search + gRPC call)
+- [x] T3.5 Search: optional `title` on `movies` and `name` on `people` (gRPC `SearchPeople`), combinable with the `roles` filter
 - [ ] T3.6 Error handling: map gRPC `Status` codes and domain errors to GraphQL errors. Handle people-service being unavailable gracefully.
 - [ ] T3.7 Tests:
   - unit tests (MockK the gRPC stub)
   - `GraphQlTester` tests
   - upload edge cases: wrong type, too large, empty file, unknown movie
-  - search edge cases: empty, special characters, no results, one side failing
+  - search edge cases: blank, special characters, no results, case and surrounding spaces
 
 ### Phase 4: movie-web
 - [ ] T4.1 SvelteKit + TS + Tailwind + urql + codegen. Layout and navigation, responsive.
@@ -177,7 +176,7 @@ Use the latest stable versions available when each project is set up.
 - [ ] T4.3 Movie create/edit form with validation, delete confirmation, toasts
 - [ ] T4.4 Artwork upload: XHR with a progress bar, preview, cancel, error display
 - [ ] T4.5 People list plus CRUD, and credit management on the movie page
-- [ ] T4.6 Global debounced search with a loading indicator and grouped results
+- [ ] T4.6 Debounced search on the Movies and People pages, with a loading indicator
 - [ ] T4.7 Tests (Vitest + Testing Library):
   - form validation
   - upload progress and error states
