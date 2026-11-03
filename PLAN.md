@@ -171,8 +171,8 @@ Use the latest stable versions available when each project is set up.
   - search edge cases: blank, special characters, no results, case and surrounding spaces
 
 ### Phase 4: movie-web
-- [ ] T4.1 SvelteKit + TS + Tailwind + urql + codegen. Layout and navigation, responsive.
-- [ ] T4.2 Movies: grid with artwork, skeletons, empty and error states
+- [x] T4.1 SvelteKit + TS + Tailwind + urql + codegen. Layout and navigation, responsive.
+- [x] T4.2 Movies: grid with artwork, skeletons, empty and error states
 - [ ] T4.3 Movie create/edit form with validation, delete confirmation, toasts
 - [ ] T4.4 Artwork upload: XHR with a progress bar, preview, cancel, error display
 - [ ] T4.5 People list plus CRUD, and credit management on the movie page
@@ -197,6 +197,13 @@ Use the latest stable versions available when each project is set up.
   - people-service publishes a `PersonDeleted` event that movie-service consumes to remove credits
   - movie-service treats people missing from `BatchGetPeople` as unknown and skips or cleans up those credits
 - [ ] E2 Person photo upload: REST `POST /people/{id}/photo` in movie-service, reusing the artwork upload and storage, then `UpdatePerson` with the served URL as `photoUrl`; frontend progress bar like the artwork upload
+- [ ] E3 Research a GraphQL gateway (e.g. Apollo Router with Federation) in front of the services, versus the current approach of movie-service as the single GraphQL entry point
+  - each service exposes its own subgraph (people-service: `Person`; movie-service: `Movie`, `Credit`), and the router composes them into one supergraph
+  - read path: `Credit.person` is resolved by the router from people-service's subgraph, replacing the `BatchGetPeople` gRPC call
+  - gRPC stays for internal commands and checks that clients never see:
+    - `addCredit`: movie-service calls `GetPerson` to check the person exists and has the role (unchanged)
+    - `deletePerson` moves to people-service's subgraph, so people-service must tell movie-service to remove that person's credits: a gRPC call to a new movie-service RPC (e.g. `DeleteCreditsByPerson`, making movie-service a gRPC server too), or a `PersonDeleted` event (see E1)
+  - trade-off: an extra component to run, and two-way coupling if cleanup uses gRPC
 
 ## Verification
 - **people-service:** `./gradlew test` passes. `grpcurl -plaintext localhost:9090 list` shows `PeopleService`. CRUD works through `grpcurl`.
