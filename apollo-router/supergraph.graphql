@@ -1,19 +1,16 @@
 schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
-  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+  @link(url: "https://specs.apollo.dev/join/v0.4", for: EXECUTION)
 {
   query: Query
   mutation: Mutation
 }
 
-"""
-This directive disables error propagation when a non nullable field returns null for the given operation.
-"""
-directive @experimental_disableErrorPropagation on MUTATION | QUERY | SUBSCRIPTION
+directive @join__directive(graphs: [join__Graph!], name: String!, args: join__DirectiveArguments) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
 
-directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean, overrideLabel: String) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
 directive @join__graph(name: String!, url: String!) on ENUM_VALUE
 
@@ -28,19 +25,19 @@ directive @link(url: String, as: String, for: link__Purpose, import: [link__Impo
 type Credit
   @join__type(graph: MOVIES)
 {
+  characterName: String
   id: ID!
   person: Person
   role: Role!
-  characterName: String
 }
 
 input CreditDetail
   @join__type(graph: MOVIES)
 {
+  characterName: String
   movieId: ID!
   personId: ID!
   role: Role!
-  characterName: String
 }
 
 enum Genre
@@ -63,6 +60,8 @@ enum Genre
   WAR @join__enumValue(graph: MOVIES)
   WESTERN @join__enumValue(graph: MOVIES)
 }
+
+scalar join__DirectiveArguments
 
 scalar join__FieldSet
 
@@ -87,74 +86,74 @@ enum link__Purpose {
 type Movie
   @join__type(graph: MOVIES)
 {
+  artworkUrl: String
+  credits: [Credit!]!
+  genres: [Genre!]!
   id: ID!
-  title: String!
-  synopsis: String
   releaseYear: Int
   runtimeMinutes: Int
-  genres: [Genre!]!
-  credits: [Credit!]!
-  artworkUrl: String
+  synopsis: String
+  title: String!
 }
 
 input MovieDetail
   @join__type(graph: MOVIES)
 {
-  title: String!
-  synopsis: String
+  genres: [Genre!]!
   releaseYear: Int
   runtimeMinutes: Int
-  genres: [Genre!]!
+  synopsis: String
+  title: String!
 }
 
 type Mutation
   @join__type(graph: MOVIES)
 {
-  createPerson(personDetail: PersonDetail!): Person!
-  updatePerson(id: ID!, personDetail: PersonDetail!): Person!
-  deletePerson(id: ID!): Boolean!
-  createMovie(movieDetail: MovieDetail!): Movie!
-  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie!
-  deleteMovie(id: ID!): Boolean!
   addCredit(creditDetail: CreditDetail!): Credit!
+  createMovie(movieDetail: MovieDetail!): Movie!
+  createPerson(personDetail: PersonDetail!): Person!
   deleteCredit(id: ID!): Boolean!
+  deleteMovie(id: ID!): Boolean!
+  deletePerson(id: ID!): Boolean!
+  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie!
+  updatePerson(id: ID!, personDetail: PersonDetail!): Person!
 }
 
 type Person
   @join__type(graph: MOVIES)
 {
+  bio: String
+  birthDate: String
   id: ID!
   name: String!
-  roles: [Role!]!
-  birthDate: String
-  bio: String
   photoUrl: String
+  roles: [Role!]!
 }
 
 input PersonDetail
   @join__type(graph: MOVIES)
 {
-  name: String!
-  roles: [Role!]!
-  birthDate: String
   bio: String
+  birthDate: String
+  name: String!
   photoUrl: String
+  roles: [Role!]!
 }
 
 type Query
   @join__type(graph: MOVIES)
 {
-  person(id: ID!): Person
-  people(roles: [Role!], name: String): [Person!]!
-  movies(title: String): [Movie!]!
   movie(id: ID!): Movie
+  movies(title: String): [Movie!]!
+  people(name: String, roles: [Role!]): [Person!]!
+  person(id: ID!): Person
 }
 
 enum Role
   @join__type(graph: MOVIES)
 {
   ACTOR @join__enumValue(graph: MOVIES)
+  CREATOR @join__enumValue(graph: MOVIES)
   DIRECTOR @join__enumValue(graph: MOVIES)
   WRITER @join__enumValue(graph: MOVIES)
-  CREATOR @join__enumValue(graph: MOVIES)
 }

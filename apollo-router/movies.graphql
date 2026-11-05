@@ -1,51 +1,86 @@
-schema {
+schema @link(import : ["@key"], url : "https://specs.apollo.dev/federation/v2.7"){
   query: Query
   mutation: Mutation
 }
 
+directive @federation__authenticated on SCALAR | OBJECT | FIELD_DEFINITION | INTERFACE | ENUM
+
+directive @federation__composeDirective(name: String!) repeatable on SCHEMA
+
+directive @federation__extends on OBJECT | INTERFACE
+
+directive @federation__external on OBJECT | FIELD_DEFINITION
+
+directive @federation__interfaceObject on OBJECT
+
+directive @federation__override(from: String!, label: String) on FIELD_DEFINITION
+
+directive @federation__policy(policies: [[federation__Policy!]!]!) on SCALAR | OBJECT | FIELD_DEFINITION | INTERFACE | ENUM
+
+directive @federation__provides(fields: federation__FieldSet!) on FIELD_DEFINITION
+
+directive @federation__requires(fields: federation__FieldSet!) on FIELD_DEFINITION
+
+directive @federation__requiresScopes(scopes: [[federation__Scope!]!]!) on SCALAR | OBJECT | FIELD_DEFINITION | INTERFACE | ENUM
+
+directive @federation__shareable repeatable on OBJECT | FIELD_DEFINITION
+
+directive @inaccessible on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+directive @key(fields: federation__FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE
+
+directive @link(as: String, for: link__Purpose, import: [link__Import], url: String!) repeatable on SCHEMA
+
+directive @tag(name: String!) repeatable on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
 type Credit {
+  characterName: String
   id: ID!
   person: Person
   role: Role!
-  characterName: String
 }
 
 type Movie {
+  artworkUrl: String
+  credits: [Credit!]!
+  genres: [Genre!]!
   id: ID!
-  title: String!
-  synopsis: String
   releaseYear: Int
   runtimeMinutes: Int
-  genres: [Genre!]!
-  credits: [Credit!]!
-  artworkUrl: String
+  synopsis: String
+  title: String!
 }
 
 type Mutation {
-  createPerson(personDetail: PersonDetail!): Person!
-  updatePerson(id: ID!, personDetail: PersonDetail!): Person!
-  deletePerson(id: ID!): Boolean!
-  createMovie(movieDetail: MovieDetail!): Movie!
-  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie!
-  deleteMovie(id: ID!): Boolean!
   addCredit(creditDetail: CreditDetail!): Credit!
+  createMovie(movieDetail: MovieDetail!): Movie!
+  createPerson(personDetail: PersonDetail!): Person!
   deleteCredit(id: ID!): Boolean!
+  deleteMovie(id: ID!): Boolean!
+  deletePerson(id: ID!): Boolean!
+  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie!
+  updatePerson(id: ID!, personDetail: PersonDetail!): Person!
 }
 
 type Person {
+  bio: String
+  birthDate: String
   id: ID!
   name: String!
-  roles: [Role!]!
-  birthDate: String
-  bio: String
   photoUrl: String
+  roles: [Role!]!
 }
 
 type Query {
-  person(id: ID!): Person
-  people(roles: [Role!], name: String): [Person!]!
-  movies(title: String): [Movie!]!
+  _service: _Service!
   movie(id: ID!): Movie
+  movies(title: String): [Movie!]!
+  people(name: String, roles: [Role!]): [Person!]!
+  person(id: ID!): Person
+}
+
+type _Service {
+  sdl: String!
 }
 
 enum Genre {
@@ -69,53 +104,43 @@ enum Genre {
 
 enum Role {
   ACTOR
+  CREATOR
   DIRECTOR
   WRITER
-  CREATOR
 }
 
+enum link__Purpose {
+  EXECUTION
+  SECURITY
+}
+
+scalar federation__FieldSet
+
+scalar federation__Policy
+
+scalar federation__Scope
+
+scalar link__Import
+
 input CreditDetail {
+  characterName: String
   movieId: ID!
   personId: ID!
   role: Role!
-  characterName: String
 }
 
 input MovieDetail {
-  title: String!
-  synopsis: String
+  genres: [Genre!]!
   releaseYear: Int
   runtimeMinutes: Int
-  genres: [Genre!]!
+  synopsis: String
+  title: String!
 }
 
 input PersonDetail {
-  name: String!
-  roles: [Role!]!
-  birthDate: String
   bio: String
+  birthDate: String
+  name: String!
   photoUrl: String
+  roles: [Role!]!
 }
-
-"""Exposes a URL that specifies the behaviour of this scalar."""
-directive @specifiedBy(
-  """The URL that specifies the behaviour of this scalar."""
-  url: String!,
-) on SCALAR
-
-"""Indicates an Input Object is a OneOf Input Object."""
-directive @oneOf on INPUT_OBJECT
-
-"""This directive allows results to be deferred during execution"""
-directive @defer(
-  """Deferred behaviour is controlled by this argument"""
-  if: Boolean! = true,
-  """A unique label that represents the fragment being deferred"""
-  label: String,
-) on FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-"""
-This directive disables error propagation when a non nullable field returns null for the given operation.
-"""
-directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
-
