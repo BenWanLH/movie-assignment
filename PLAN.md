@@ -173,10 +173,10 @@ Use the latest stable versions available when each project is set up.
 ### Phase 4: movie-web
 - [x] T4.1 SvelteKit + TS + Tailwind + urql + codegen. Layout and navigation, responsive.
 - [x] T4.2 Movies: grid with artwork, skeletons, empty and error states
-- [ ] T4.3 Movie create/edit form with validation, delete confirmation, toasts
-- [ ] T4.4 Artwork upload: XHR with a progress bar, preview, cancel, error display
-- [ ] T4.5 People list plus CRUD, and credit management on the movie page
-- [ ] T4.6 Debounced search on the Movies and People pages, with a loading indicator
+- [x] T4.3 Movie create/edit form with validation, delete confirmation, toasts
+- [x] T4.4 Artwork upload: XHR with a progress bar, preview, cancel, error display
+- [x] T4.5 People list plus CRUD, and credit management on the movie page
+- [x] T4.6 Debounced search on the Movies and People pages, with a loading indicator
 - [ ] T4.7 Tests (Vitest + Testing Library):
   - form validation
   - upload progress and error states
