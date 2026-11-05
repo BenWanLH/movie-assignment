@@ -1,0 +1,121 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Credit {
+  id: ID!
+  person: Person
+  role: Role!
+  characterName: String
+}
+
+type Movie {
+  id: ID!
+  title: String!
+  synopsis: String
+  releaseYear: Int
+  runtimeMinutes: Int
+  genres: [Genre!]!
+  credits: [Credit!]!
+  artworkUrl: String
+}
+
+type Mutation {
+  createPerson(personDetail: PersonDetail!): Person!
+  updatePerson(id: ID!, personDetail: PersonDetail!): Person!
+  deletePerson(id: ID!): Boolean!
+  createMovie(movieDetail: MovieDetail!): Movie!
+  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie!
+  deleteMovie(id: ID!): Boolean!
+  addCredit(creditDetail: CreditDetail!): Credit!
+  deleteCredit(id: ID!): Boolean!
+}
+
+type Person {
+  id: ID!
+  name: String!
+  roles: [Role!]!
+  birthDate: String
+  bio: String
+  photoUrl: String
+}
+
+type Query {
+  person(id: ID!): Person
+  people(roles: [Role!], name: String): [Person!]!
+  movies(title: String): [Movie!]!
+  movie(id: ID!): Movie
+}
+
+enum Genre {
+  ACTION
+  ADVENTURE
+  ANIMATION
+  COMEDY
+  CRIME
+  DOCUMENTARY
+  DRAMA
+  FAMILY
+  FANTASY
+  HORROR
+  MYSTERY
+  ROMANCE
+  SCIENCE_FICTION
+  THRILLER
+  WAR
+  WESTERN
+}
+
+enum Role {
+  ACTOR
+  DIRECTOR
+  WRITER
+  CREATOR
+}
+
+input CreditDetail {
+  movieId: ID!
+  personId: ID!
+  role: Role!
+  characterName: String
+}
+
+input MovieDetail {
+  title: String!
+  synopsis: String
+  releaseYear: Int
+  runtimeMinutes: Int
+  genres: [Genre!]!
+}
+
+input PersonDetail {
+  name: String!
+  roles: [Role!]!
+  birthDate: String
+  bio: String
+  photoUrl: String
+}
+
+"""Exposes a URL that specifies the behaviour of this scalar."""
+directive @specifiedBy(
+  """The URL that specifies the behaviour of this scalar."""
+  url: String!,
+) on SCALAR
+
+"""Indicates an Input Object is a OneOf Input Object."""
+directive @oneOf on INPUT_OBJECT
+
+"""This directive allows results to be deferred during execution"""
+directive @defer(
+  """Deferred behaviour is controlled by this argument"""
+  if: Boolean! = true,
+  """A unique label that represents the fragment being deferred"""
+  label: String,
+) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"""
+This directive disables error propagation when a non nullable field returns null for the given operation.
+"""
+directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
+

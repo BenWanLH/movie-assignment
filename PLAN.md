@@ -204,6 +204,19 @@ Use the latest stable versions available when each project is set up.
     - `addCredit`: movie-service calls `GetPerson` to check the person exists and has the role (unchanged)
     - `deletePerson` moves to people-service's subgraph, so people-service must tell movie-service to remove that person's credits: a gRPC call to a new movie-service RPC (e.g. `DeleteCreditsByPerson`, making movie-service a gRPC server too), or a `PersonDeleted` event (see E1)
   - trade-off: an extra component to run, and two-way coupling if cleanup uses gRPC
+  - [ ] E3.1 Apollo Router in Docker in front of movie-service (no service changes)
+    - [ ] `apollo-router/`: `movies.graphql` (introspected), `supergraph.yml`, composed `supergraph.graphql`, `router.yaml`, `docker-compose.yaml` (Colima, `host.docker.internal:host-gateway`)
+    - [ ] movie-web: Vite `/graphql` proxy and codegen point at the router (`:4000`); artwork upload stays on movie-service (`:8080`)
+    - [ ] README: run the router, recompose after a schema change
+  - [ ] E3.2 people-service as a second subgraph
+    - [ ] GraphQL over HTTP (`:8081`) alongside gRPC (`:9090`)
+    - [ ] federation setup in both services: `federation-graphql-java-support`, `FederationSchemaFactory`, `@link` schema
+    - [ ] `Person @key(fields: "id")` and `@EntityMapping` in people-service
+    - [ ] `rover subgraph introspect` for both subgraphs; recompose
+  - [ ] E3.3 people owned by people-service's subgraph
+    - [ ] movie-service drops the person queries and mutations; `Credit.person` becomes a `Person` stub resolved by the router, replacing `BatchGetPeople`
+    - [ ] `deletePerson` credit cleanup: new movie-service RPC (`DeleteCreditsByPerson`) in `protos`, or a `PersonDeleted` event (E1)
+    - [ ] tests updated in both services
 
 ## Verification
 - **people-service:** `./gradlew test` passes. `grpcurl -plaintext localhost:9090 list` shows `PeopleService`. CRUD works through `grpcurl`.

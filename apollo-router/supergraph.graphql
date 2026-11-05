@@ -1,0 +1,160 @@
+schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+{
+  query: Query
+  mutation: Mutation
+}
+
+"""
+This directive disables error propagation when a non nullable field returns null for the given operation.
+"""
+directive @experimental_disableErrorPropagation on MUTATION | QUERY | SUBSCRIPTION
+
+directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+
+directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true, isInterfaceObject: Boolean! = false) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
+
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+
+type Credit
+  @join__type(graph: MOVIES)
+{
+  id: ID!
+  person: Person
+  role: Role!
+  characterName: String
+}
+
+input CreditDetail
+  @join__type(graph: MOVIES)
+{
+  movieId: ID!
+  personId: ID!
+  role: Role!
+  characterName: String
+}
+
+enum Genre
+  @join__type(graph: MOVIES)
+{
+  ACTION @join__enumValue(graph: MOVIES)
+  ADVENTURE @join__enumValue(graph: MOVIES)
+  ANIMATION @join__enumValue(graph: MOVIES)
+  COMEDY @join__enumValue(graph: MOVIES)
+  CRIME @join__enumValue(graph: MOVIES)
+  DOCUMENTARY @join__enumValue(graph: MOVIES)
+  DRAMA @join__enumValue(graph: MOVIES)
+  FAMILY @join__enumValue(graph: MOVIES)
+  FANTASY @join__enumValue(graph: MOVIES)
+  HORROR @join__enumValue(graph: MOVIES)
+  MYSTERY @join__enumValue(graph: MOVIES)
+  ROMANCE @join__enumValue(graph: MOVIES)
+  SCIENCE_FICTION @join__enumValue(graph: MOVIES)
+  THRILLER @join__enumValue(graph: MOVIES)
+  WAR @join__enumValue(graph: MOVIES)
+  WESTERN @join__enumValue(graph: MOVIES)
+}
+
+scalar join__FieldSet
+
+enum join__Graph {
+  MOVIES @join__graph(name: "movies", url: "http://host.docker.internal:8080/graphql")
+}
+
+scalar link__Import
+
+enum link__Purpose {
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+
+  """
+  `EXECUTION` features provide metadata necessary for operation execution.
+  """
+  EXECUTION
+}
+
+type Movie
+  @join__type(graph: MOVIES)
+{
+  id: ID!
+  title: String!
+  synopsis: String
+  releaseYear: Int
+  runtimeMinutes: Int
+  genres: [Genre!]!
+  credits: [Credit!]!
+  artworkUrl: String
+}
+
+input MovieDetail
+  @join__type(graph: MOVIES)
+{
+  title: String!
+  synopsis: String
+  releaseYear: Int
+  runtimeMinutes: Int
+  genres: [Genre!]!
+}
+
+type Mutation
+  @join__type(graph: MOVIES)
+{
+  createPerson(personDetail: PersonDetail!): Person!
+  updatePerson(id: ID!, personDetail: PersonDetail!): Person!
+  deletePerson(id: ID!): Boolean!
+  createMovie(movieDetail: MovieDetail!): Movie!
+  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie!
+  deleteMovie(id: ID!): Boolean!
+  addCredit(creditDetail: CreditDetail!): Credit!
+  deleteCredit(id: ID!): Boolean!
+}
+
+type Person
+  @join__type(graph: MOVIES)
+{
+  id: ID!
+  name: String!
+  roles: [Role!]!
+  birthDate: String
+  bio: String
+  photoUrl: String
+}
+
+input PersonDetail
+  @join__type(graph: MOVIES)
+{
+  name: String!
+  roles: [Role!]!
+  birthDate: String
+  bio: String
+  photoUrl: String
+}
+
+type Query
+  @join__type(graph: MOVIES)
+{
+  person(id: ID!): Person
+  people(roles: [Role!], name: String): [Person!]!
+  movies(title: String): [Movie!]!
+  movie(id: ID!): Movie
+}
+
+enum Role
+  @join__type(graph: MOVIES)
+{
+  ACTOR @join__enumValue(graph: MOVIES)
+  DIRECTOR @join__enumValue(graph: MOVIES)
+  WRITER @join__enumValue(graph: MOVIES)
+  CREATOR @join__enumValue(graph: MOVIES)
+}

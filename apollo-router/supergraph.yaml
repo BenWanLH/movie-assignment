@@ -1,0 +1,6 @@
+federation_version: =2.9.3
+subgraphs:
+  movies:
+    routing_url: http://host.docker.internal:8080/graphql
+    schema:
+      file: ./movies.graphql
