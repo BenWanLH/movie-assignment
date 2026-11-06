@@ -67,6 +67,7 @@ scalar join__FieldSet
 
 enum join__Graph {
   MOVIES @join__graph(name: "movies", url: "http://host.docker.internal:8080/graphql")
+  PEOPLE @join__graph(name: "people", url: "http://host.docker.internal:8081/graphql")
 }
 
 scalar link__Import
@@ -108,30 +109,32 @@ input MovieDetail
 
 type Mutation
   @join__type(graph: MOVIES)
+  @join__type(graph: PEOPLE)
 {
-  addCredit(creditDetail: CreditDetail!): Credit!
-  createMovie(movieDetail: MovieDetail!): Movie!
-  createPerson(personDetail: PersonDetail!): Person!
-  deleteCredit(id: ID!): Boolean!
-  deleteMovie(id: ID!): Boolean!
-  deletePerson(id: ID!): Boolean!
-  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie!
-  updatePerson(id: ID!, personDetail: PersonDetail!): Person!
+  addCredit(creditDetail: CreditDetail!): Credit! @join__field(graph: MOVIES)
+  createMovie(movieDetail: MovieDetail!): Movie! @join__field(graph: MOVIES)
+  deleteCredit(id: ID!): Boolean! @join__field(graph: MOVIES)
+  deleteMovie(id: ID!): Boolean! @join__field(graph: MOVIES)
+  updateMovie(id: ID!, movieDetail: MovieDetail!): Movie! @join__field(graph: MOVIES)
+  createPerson(personDetail: PersonDetail!): Person! @join__field(graph: PEOPLE)
+  deletePerson(id: ID!): Boolean! @join__field(graph: PEOPLE)
+  updatePerson(id: ID!, personDetail: PersonDetail!): Person! @join__field(graph: PEOPLE)
 }
 
 type Person
-  @join__type(graph: MOVIES)
+  @join__type(graph: MOVIES, key: "id", resolvable: false)
+  @join__type(graph: PEOPLE, key: "id", resolvable: true)
 {
-  bio: String
-  birthDate: String
   id: ID!
-  name: String!
-  photoUrl: String
-  roles: [Role!]!
+  bio: String @join__field(graph: PEOPLE)
+  birthDate: String @join__field(graph: PEOPLE)
+  name: String! @join__field(graph: PEOPLE)
+  photoUrl: String @join__field(graph: PEOPLE)
+  roles: [Role!]! @join__field(graph: PEOPLE)
 }
 
 input PersonDetail
-  @join__type(graph: MOVIES)
+  @join__type(graph: PEOPLE)
 {
   bio: String
   birthDate: String
@@ -142,18 +145,20 @@ input PersonDetail
 
 type Query
   @join__type(graph: MOVIES)
+  @join__type(graph: PEOPLE)
 {
-  movie(id: ID!): Movie
-  movies(title: String): [Movie!]!
-  people(name: String, roles: [Role!]): [Person!]!
-  person(id: ID!): Person
+  movie(id: ID!): Movie @join__field(graph: MOVIES)
+  movies(title: String): [Movie!]! @join__field(graph: MOVIES)
+  people(name: String, roles: [Role!]): [Person!]! @join__field(graph: PEOPLE)
+  person(id: ID!): Person @join__field(graph: PEOPLE)
 }
 
 enum Role
   @join__type(graph: MOVIES)
+  @join__type(graph: PEOPLE)
 {
-  ACTOR @join__enumValue(graph: MOVIES)
-  CREATOR @join__enumValue(graph: MOVIES)
-  DIRECTOR @join__enumValue(graph: MOVIES)
-  WRITER @join__enumValue(graph: MOVIES)
+  ACTOR @join__enumValue(graph: MOVIES) @join__enumValue(graph: PEOPLE)
+  CREATOR @join__enumValue(graph: MOVIES) @join__enumValue(graph: PEOPLE)
+  DIRECTOR @join__enumValue(graph: MOVIES) @join__enumValue(graph: PEOPLE)
+  WRITER @join__enumValue(graph: MOVIES) @join__enumValue(graph: PEOPLE)
 }

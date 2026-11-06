@@ -4,3 +4,7 @@ subgraphs:
     routing_url: http://host.docker.internal:8080/graphql
     schema:
       file: ./movies.graphql
+  people:
+    routing_url: http://host.docker.internal:8081/graphql
+    schema:
+      file: ./people.graphql

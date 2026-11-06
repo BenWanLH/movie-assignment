@@ -4,28 +4,36 @@ A movie catalogue for listing, creating, updating, deleting and searching movies
 
 - **Frontend:** Svelte + TypeScript
 - **Backend:** two Kotlin Spring Boot services
-- **Frontend ↔ backend:** GraphQL
+- **Frontend ↔ backend:** GraphQL, through an Apollo Router that federates both services into one API
 - **Service ↔ service:** gRPC
-
-> **Status:** work in progress. The commands below describe the target setup and will be confirmed as each part is built.
 
 ## Architecture
 
 ```
-┌──────────────┐   GraphQL (HTTP)   ┌──────────────────┐    gRPC (HTTP/2)    ┌──────────────────┐
-│  movie-web   │ ─────────────────▶ │  movie-service   │ ──────────────────▶ │  people-service  │
-│  Svelte + TS │                    │  movies, credits │                     │  cast & creators │
-│  :5173       │                    │  artwork  :8080  │                     │  :9090           │
-└──────────────┘                    └──────────────────┘                     └──────────────────┘
-                                     H2 database (movies)                     H2 database (people)
-
-                     both services include protos (the shared .proto contract) as a submodule at proto/
+┌──────────────┐  GraphQL   ┌───────────────┐
+│  movie-web   │ ─────────▶ │ Apollo Router │
+│  Svelte + TS │            │ Docker  :4000 │
+│  :5173       │            └───┬───────┬───┘
+└──────┬───────┘     GraphQL    │       │    GraphQL
+       │          (subgraph)    ▼       ▼   (subgraph)
+       │        ┌──────────────────┐  ┌──────────────────┐
+       │        │  movie-service   │  │  people-service  │
+       └──────▶ │  movies, credits │  │  cast & creators │
+  REST artwork  │  artwork         │  │                  │
+  upload        │  GraphQL :8080   │  │  GraphQL :8081   │
+                │  gRPC    :9091   │  │  gRPC    :9090   │
+                └────────┬─────────┘  └────────┬─────────┘
+                         │  GetPerson ──────▶  │
+                         │  ◀── DeleteCreditsByPerson
+                         └───────── gRPC ──────┘
+                 H2 (movies, credits)    H2 (people)
 ```
 
-- **movie-web** is the browser app. It only ever talks to `movie-service`, through GraphQL.
-- **movie-service** serves the GraphQL API and owns movies, credits (who played or made what) and uploaded artwork. Whenever it needs cast or creator data, it calls `people-service` over gRPC.
-- **people-service** owns cast and creators and exposes a gRPC API only.
-- **[protos](https://github.com/BenWanLH/protos)** holds the `.proto` files that define the gRPC contract. It isn't part of this umbrella repo directly. Instead, both Spring Boot services include it as their own git submodule at `proto/` and generate their Kotlin code from it at build time.
+- **movie-web** is the browser app. All data goes through the router as GraphQL. Artwork uploads go straight to `movie-service` over REST.
+- **Apollo Router** composes the two services' GraphQL schemas (subgraphs) into one supergraph and splits each query between them. For `movie { credits { person { name } } }`, it gets the movie and credits from `movie-service`, then fetches all the people from `people-service` in one batched call.
+- **movie-service** owns movies, credits (who played or made what) and uploaded artwork. A credit only stores the person's id. It calls `people-service` over gRPC (`GetPerson`) to check the person exists and has the role before adding a credit.
+- **people-service** owns cast and creators. When a person is deleted, it calls `movie-service` over gRPC (`DeleteCreditsByPerson`) to remove their credits, inside the same transaction, so a failed call rolls the delete back.
+- **[protos](https://github.com/BenWanLH/protos)** holds the `.proto` files for the gRPC contracts (`people/v1`, `movies/v1`). Both services include it as a git submodule at `protos/` and generate their Kotlin code from it at build time.
 - Each service has its own embedded H2 database, so no database server needs to be installed.
 
 ## Repositories
@@ -42,10 +50,11 @@ The shared gRPC contract, [BenWanLH/protos](https://github.com/BenWanLH/protos),
 
 ```
 movie-assignment/
+├── apollo-router/  ← router config and composed supergraph (part of this repo)
 ├── people-service/
-│   └── proto/      ← protos submodule
+│   └── protos/     ← protos submodule
 ├── movie-service/
-│   └── proto/      ← protos submodule
+│   └── protos/     ← protos submodule
 └── movie-web/
 ```
 
@@ -56,6 +65,9 @@ movie-assignment/
 | Git | any recent | Cloning with submodules |
 | Java (JDK) | 21 | `people-service`, `movie-service` |
 | Node.js | 22 LTS | `movie-web` |
+| Docker + Compose | any recent | Apollo Router |
+
+Any Docker runtime works. A free option on macOS is [Colima](https://github.com/abiosoft/colima): `brew install colima docker docker-compose && colima start`. Colima only shares your home folder with containers, so keep this repo somewhere under `~`.
 
 You don't need to install Gradle. Each service ships with the Gradle wrapper (`./gradlew`), which downloads the right Gradle version on first use.
 
@@ -91,7 +103,8 @@ node -v         # should report v22.x
 
 ### Optional tools
 
-- [grpcurl](https://github.com/fullstorydev/grpcurl) (`brew install grpcurl`) lets you call the gRPC API of `people-service` directly from the terminal.
+- [grpcurl](https://github.com/fullstorydev/grpcurl) (`brew install grpcurl`) lets you call the services' gRPC APIs directly from the terminal.
+- [Rover](https://www.apollographql.com/docs/rover/) is only needed to recompose the supergraph after a schema change (see [Apollo Router](#apollo-router)). It runs through `npx`, so there's nothing to install.
 
 ## Getting the code
 
@@ -112,25 +125,35 @@ git submodule update --init --recursive
 
 ## Running the project
 
-Start the three apps in this order, each in its own terminal, from the root of this repo.
+Start each part in its own terminal, from the root of this repo.
 
-**1. people-service** (gRPC on port 9090)
+**1. people-service** (GraphQL on 8081, gRPC on 9090)
 
 ```bash
 cd people-service
 ./gradlew bootRun
 ```
 
-**2. movie-service** (GraphQL on port 8080)
+**2. movie-service** (GraphQL on 8080, gRPC on 9091)
 
 ```bash
 cd movie-service
 ./gradlew bootRun
 ```
 
-To explore the API in the browser, open GraphiQL at <http://localhost:8080/graphiql>.
+The two services call each other over gRPC, but connections are made lazily, so they can start in either order.
 
-**3. movie-web** (port 5173)
+**3. Apollo Router** (port 4000)
+
+```bash
+cd apollo-router
+docker compose up -d
+curl localhost:8088/health   # {"status":"UP"}
+```
+
+To explore the combined API in the browser, open <http://localhost:4000/graphql>. Each service also has its own GraphiQL (<http://localhost:8080/graphiql>, <http://localhost:8081/graphiql>), showing only that service's part of the schema.
+
+**4. movie-web** (port 5173)
 
 ```bash
 cd movie-web
@@ -139,6 +162,36 @@ npm run dev
 ```
 
 Then open <http://localhost:5173>.
+
+## Apollo Router
+
+`apollo-router/` holds everything the router needs:
+
+| File | Used by | Purpose |
+|---|---|---|
+| `movies.graphql`, `people.graphql` | Rover | Each service's subgraph schema, exported from the running service |
+| `supergraph.yaml` | Rover | Lists the subgraphs, where Rover reads their schemas and where the router sends queries |
+| `supergraph.graphql` | router | The composed supergraph: both schemas plus routing information |
+| `router.yaml` | router | Router settings: listen on `0.0.0.0:4000` at `/graphql`, health check on `8088` |
+| `docker-compose.yaml` | Docker | Runs `ghcr.io/apollographql/router`, mounting the two router files |
+
+Inside the container, `localhost` is the container itself, so `supergraph.yaml` reaches the services at `host.docker.internal`. `docker-compose.yaml` maps that name to your machine with `host-gateway`, which works with Colima, Docker Desktop and Linux.
+
+`supergraph.graphql` is committed, so running the router doesn't need Rover.
+
+### After changing a GraphQL schema
+
+The router only knows the schema in `supergraph.graphql`, so it rejects new fields until you recompose. With both services running:
+
+```bash
+cd apollo-router
+npx @apollo/rover subgraph introspect http://localhost:8080/graphql > movies.graphql
+npx @apollo/rover subgraph introspect http://localhost:8081/graphql > people.graphql
+APOLLO_ELV2_LICENSE=accept npx @apollo/rover supergraph compose --config supergraph.yaml > supergraph.graphql
+docker compose restart router
+```
+
+Then run `npm run codegen` in `movie-web` to refresh the frontend types. `subgraph introspect` reads each service's `_service { sdl }` field, which keeps federation directives such as `@key`. The `APOLLO_ELV2_LICENSE` variable accepts the Elastic License of Apollo's composition plugin without an interactive prompt.
 
 ## Running the tests
 
