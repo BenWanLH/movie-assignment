@@ -213,7 +213,10 @@ git submodule update --remote --recursive
 
 This project was built with help from [Claude Code](https://claude.com/claude-code). I used it to:
 
-- draft the implementation plan in [`PLAN.md`](PLAN.md), including the repo layout, architecture and task breakdown
+- draft the implementation plan in [`PLAN.md`](PLAN.md) and task breakdown.
+- queried it on syntaxes 
+- queried it on the technologies, GRPC/Graphql/Svelte
+- relied on it on some of the unit tests
 
 
 More detail will be added here as the project progresses.

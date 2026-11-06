@@ -184,8 +184,7 @@ Use the latest stable versions available when each project is set up.
   - list loading, empty and error states
 
 ### Phase 5: Integration and submission
-- [ ] T5.1 README run steps (and optional scripts) to start all 3 apps locally. Optional: Dockerfiles + umbrella `docker-compose.yml` (artwork volume, health checks).
-- [ ] T5.2 Seed data (a few movies and people) via Flyway or a seed script
+- [x] T5.1 README run steps (and optional scripts) to start all 3 apps locally. Optional: Dockerfiles + umbrella `docker-compose.yml` (artwork volume, health checks).
 - [ ] T5.3 READMEs:
   - umbrella: finalise the existing draft (architecture, setup, run, test) and confirm every command works
   - an "How AI tools were used" section
@@ -193,7 +192,7 @@ Use the latest stable versions available when each project is set up.
 - [ ] T5.4 Final pass: run every test suite, test on mobile width, dry-run the walkthrough script
 
 ### Enhancements (beyond v1)
-- [ ] E1 Orphaned credits: calling `DeletePerson` directly on people-service (not via movie-service) leaves that person's credits in movie-service. Options:
+- [x] E1 Orphaned credits: calling `DeletePerson` directly on people-service (not via movie-service) leaves that person's credits in movie-service. Options:
   - people-service publishes a `PersonDeleted` event that movie-service consumes to remove credits
   - movie-service treats people missing from `BatchGetPeople` as unknown and skips or cleans up those credits
 - [ ] E2 Person photo upload: REST `POST /people/{id}/photo` in movie-service, reusing the artwork upload and storage, then `UpdatePerson` with the served URL as `photoUrl`; frontend progress bar like the artwork upload
@@ -204,23 +203,23 @@ Use the latest stable versions available when each project is set up.
     - `addCredit`: movie-service calls `GetPerson` to check the person exists and has the role (unchanged)
     - `deletePerson` moves to people-service's subgraph, so people-service must tell movie-service to remove that person's credits: a gRPC call to a new movie-service RPC (e.g. `DeleteCreditsByPerson`, making movie-service a gRPC server too), or a `PersonDeleted` event (see E1)
   - trade-off: an extra component to run, and two-way coupling if cleanup uses gRPC
-  - [ ] E3.1 Apollo Router in Docker in front of movie-service (no service changes)
+  - [x] E3.1 Apollo Router in Docker in front of movie-service (no service changes)
     - [x] `apollo-router/`: `movies.graphql` (introspected), `supergraph.yaml`, composed `supergraph.graphql`, `router.yaml`, `docker-compose.yaml` (Colima, `host.docker.internal:host-gateway`)
     - [x] movie-web: Vite `/graphql` proxy and codegen point at the router (`:4000`); artwork upload stays on movie-service (`:8080`)
-    - [ ] READMEs: run the router, recompose after a schema change
-  - [ ] E3.2 people-service as a second subgraph
-    - [ ] GraphQL over HTTP (`:8081`) alongside gRPC (`:9090`): `person`, `people`, `createPerson`, `updatePerson`, `deletePerson`
-    - [ ] federation setup in both services: `federation-graphql-java-support` 6.2.1, `FederationSchemaFactory`, `@link` schema
+    - [x] READMEs: run the router, recompose after a schema change
+  - [x] E3.2 people-service as a second subgraph
+    - [x] GraphQL over HTTP (`:8081`) alongside gRPC (`:9090`): `person`, `people`, `createPerson`, `updatePerson`, `deletePerson`
+    - [x] federation setup in both services: `federation-graphql-java-support` 6.2.1, `FederationSchemaFactory`, `@link` schema
       - [x] movie-service
-      - [ ] people-service
-    - [ ] `Person @key(fields: "id")` and batched `@EntityMapping` (`idList`) in people-service
-    - [ ] `rover subgraph introspect` for both subgraphs (`movies.graphql`, `people.graphql`); recompose
+      - [x] people-service
+    - [x] `Person @key(fields: "id")` and batched `@EntityMapping` (`idList`) in people-service
+    - [x] `rover subgraph introspect` for both subgraphs (`movies.graphql`, `people.graphql`); recompose
   - [ ] E3.3 people owned by people-service's subgraph
-    - [ ] movie-service drops `person.graphqls`, `PersonController` and `PersonDetail`; `Credit.person` returns a `PersonStub(id)` (`Person @key(fields: "id", resolvable: false)`) resolved by the router, replacing `BatchGetPeople`
-    - [ ] `deletePerson` credit cleanup over gRPC
+    - [x] movie-service drops `person.graphqls`, `PersonController` and `PersonDetail`; `Credit.person` returns a `PersonStub(id)` (`Person @key(fields: "id", resolvable: false)`) resolved by the router, replacing `BatchGetPeople`
+    - [x] `deletePerson` credit cleanup over gRPC
       - [x] `protos`: `movies/v1/movies.proto` with `MovieCreditsService.DeleteCreditsByPerson`
-      - [ ] movie-service: gRPC server (`:9091`), `MovieCreditsGrpcService`
-      - [ ] people-service: gRPC client (blocking stub), `PersonService.deletePerson` calls `DeleteCreditsByPerson` inside its transaction
+      - [x] movie-service: gRPC server (`:9091`), `MovieCreditsGrpcService`
+      - [x] people-service: gRPC client (blocking stub), `PersonService.deletePerson` calls `DeleteCreditsByPerson` inside its transaction
     - [ ] tests updated in both services
 
 ## Verification
