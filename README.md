@@ -71,6 +71,23 @@ Any Docker runtime works. A free option on macOS is [Colima](https://github.com/
 
 You don't need to install Gradle. Each service ships with the Gradle wrapper (`./gradlew`), which downloads the right Gradle version on first use.
 
+## Getting the code
+
+Clone with `--recurse-submodules` so that the three app repos are pulled in, along with the `protos` submodule nested inside each service:
+
+```bash
+git clone --recurse-submodules https://github.com/BenWanLH/movie-assignment.git
+cd movie-assignment
+```
+
+If you've already cloned without that flag, the submodule folders will be empty. Fill them with:
+
+```bash
+git submodule update --init --recursive
+```
+
+> GitHub's **Download ZIP** button does not include submodules. Please use `git clone` instead.
+
 ### Install with asdf (recommended)
 
 Each repo pins its versions in a `.tool-versions` file. If you use [asdf](https://asdf-vm.com):
@@ -105,23 +122,6 @@ node -v         # should report v22.x
 
 - [grpcurl](https://github.com/fullstorydev/grpcurl) (`brew install grpcurl`) lets you call the services' gRPC APIs directly from the terminal.
 - [Rover](https://www.apollographql.com/docs/rover/) is only needed to recompose the supergraph after a schema change (see [Apollo Router](#apollo-router)). It runs through `npx`, so there's nothing to install.
-
-## Getting the code
-
-Clone with `--recurse-submodules` so that the three app repos are pulled in, along with the `protos` submodule nested inside each service:
-
-```bash
-git clone --recurse-submodules https://github.com/BenWanLH/movie-assignment.git
-cd movie-assignment
-```
-
-If you've already cloned without that flag, the submodule folders will be empty. Fill them with:
-
-```bash
-git submodule update --init --recursive
-```
-
-> GitHub's **Download ZIP** button does not include submodules. Please use `git clone` instead.
 
 ## Running the project
 
@@ -214,9 +214,7 @@ git submodule update --remote --recursive
 This project was built with help from [Claude Code](https://claude.com/claude-code). I used it to:
 
 - draft the implementation plan in [`PLAN.md`](PLAN.md) and task breakdown.
+- Creating and updating README files
 - queried it on syntaxes 
 - queried it on the technologies, GRPC/Graphql/Svelte
 - relied on it on some of the unit tests
-
-
-More detail will be added here as the project progresses.

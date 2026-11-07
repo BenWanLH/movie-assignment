@@ -195,7 +195,7 @@ Use the latest stable versions available when each project is set up.
 - [x] E1 Orphaned credits: calling `DeletePerson` directly on people-service (not via movie-service) leaves that person's credits in movie-service. Options:
   - people-service publishes a `PersonDeleted` event that movie-service consumes to remove credits
   - movie-service treats people missing from `BatchGetPeople` as unknown and skips or cleans up those credits
-- [ ] E2 Person photo upload: REST `POST /people/{id}/photo` in movie-service, reusing the artwork upload and storage, then `UpdatePerson` with the served URL as `photoUrl`; frontend progress bar like the artwork upload
+- [ ] E2 Person photo upload: REST `POST` / `GET /people/{id}/photo` in people-service, mirroring the artwork upload; `photo_filename` column; `Person.photoUrl` computed like `artworkUrl`; `photoUrl` removed from the `PersonDetail` input and from `CreatePersonRequest` / `UpdatePersonRequest` (`reserved`); router recomposed; frontend upload with progress bar on the person edit page
 - [ ] E3 Research a GraphQL gateway (e.g. Apollo Router with Federation) in front of the services, versus the current approach of movie-service as the single GraphQL entry point
   - each service exposes its own subgraph (people-service: `Person`; movie-service: `Movie`, `Credit`), and the router composes them into one supergraph
   - read path: `Credit.person` is resolved by the router from people-service's subgraph, replacing the `BatchGetPeople` gRPC call
