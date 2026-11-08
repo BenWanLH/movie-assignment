@@ -177,7 +177,7 @@ Use the latest stable versions available when each project is set up.
 - [x] T4.4 Artwork upload: XHR with a progress bar, preview, cancel, error display
 - [x] T4.5 People list plus CRUD, and credit management on the movie page
 - [x] T4.6 Debounced search on the Movies and People pages, with a loading indicator
-- [ ] T4.7 Tests (Vitest + Testing Library):
+- [x] T4.7 Tests (Vitest + Testing Library):
   - form validation
   - upload progress and error states
   - search debounce
@@ -185,18 +185,18 @@ Use the latest stable versions available when each project is set up.
 
 ### Phase 5: Integration and submission
 - [x] T5.1 README run steps (and optional scripts) to start all 3 apps locally. Optional: Dockerfiles + umbrella `docker-compose.yml` (artwork volume, health checks).
-- [ ] T5.3 READMEs:
+- [x] T5.3 READMEs:
   - umbrella: finalise the existing draft (architecture, setup, run, test) and confirm every command works
   - an "How AI tools were used" section
   - each repo's own README
-- [ ] T5.4 Final pass: run every test suite, test on mobile width, dry-run the walkthrough script
+- [x] T5.4 Final pass: run every test suite, test on mobile width, dry-run the walkthrough script
 
 ### Enhancements (beyond v1)
 - [x] E1 Orphaned credits: calling `DeletePerson` directly on people-service (not via movie-service) leaves that person's credits in movie-service. Options:
   - people-service publishes a `PersonDeleted` event that movie-service consumes to remove credits
   - movie-service treats people missing from `BatchGetPeople` as unknown and skips or cleans up those credits
-- [ ] E2 Person photo upload: REST `POST` / `GET /people/{id}/photo` in people-service, mirroring the artwork upload; `photo_filename` column; `Person.photoUrl` computed like `artworkUrl`; `photoUrl` removed from the `PersonDetail` input and from `CreatePersonRequest` / `UpdatePersonRequest` (`reserved`); router recomposed; frontend upload with progress bar on the person edit page
-- [ ] E3 Research a GraphQL gateway (e.g. Apollo Router with Federation) in front of the services, versus the current approach of movie-service as the single GraphQL entry point
+- [x] E2 Person photo upload: REST `POST` / `GET /people/{id}/photo` in people-service, mirroring the artwork upload; `photo_filename` column; `Person.photoUrl` computed like `artworkUrl`; `photoUrl` removed from the `PersonDetail` input and from `CreatePersonRequest` / `UpdatePersonRequest` (`reserved`); router recomposed; frontend upload with progress bar on the person edit page
+- [x] E3 Research a GraphQL gateway (e.g. Apollo Router with Federation) in front of the services, versus the current approach of movie-service as the single GraphQL entry point
   - each service exposes its own subgraph (people-service: `Person`; movie-service: `Movie`, `Credit`), and the router composes them into one supergraph
   - read path: `Credit.person` is resolved by the router from people-service's subgraph, replacing the `BatchGetPeople` gRPC call
   - gRPC stays for internal commands and checks that clients never see:
@@ -214,13 +214,14 @@ Use the latest stable versions available when each project is set up.
       - [x] people-service
     - [x] `Person @key(fields: "id")` and batched `@EntityMapping` (`idList`) in people-service
     - [x] `rover subgraph introspect` for both subgraphs (`movies.graphql`, `people.graphql`); recompose
-  - [ ] E3.3 people owned by people-service's subgraph
+  - [x] E3.3 people owned by people-service's subgraph
     - [x] movie-service drops `person.graphqls`, `PersonController` and `PersonDetail`; `Credit.person` returns a `PersonStub(id)` (`Person @key(fields: "id", resolvable: false)`) resolved by the router, replacing `BatchGetPeople`
     - [x] `deletePerson` credit cleanup over gRPC
       - [x] `protos`: `movies/v1/movies.proto` with `MovieCreditsService.DeleteCreditsByPerson`
       - [x] movie-service: gRPC server (`:9091`), `MovieCreditsGrpcService`
       - [x] people-service: gRPC client (blocking stub), `PersonService.deletePerson` calls `DeleteCreditsByPerson` inside its transaction
-    - [ ] tests updated in both services
+    - [x] tests updated in both services
+- [ ] E4 Object storage (S3) for artwork and photos: uploads go to a bucket instead of `./data/` (MinIO or LocalStack in Docker for local runs); the database keeps the object key; `Movie.artworkUrl` and `Person.photoUrl` return the object's URL, so the browser loads images straight from storage; `GET /movies/{id}/artwork` and `GET /people/{id}/photo` removed
 
 ## Verification
 - **people-service:** `./gradlew test` passes. `grpcurl -plaintext localhost:9090 list` shows `PeopleService`. CRUD works through `grpcurl`.
