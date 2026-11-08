@@ -139,7 +139,6 @@ input PersonDetail
   bio: String
   birthDate: String
   name: String!
-  photoUrl: String
   roles: [Role!]!
 }
 
