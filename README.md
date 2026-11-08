@@ -1,6 +1,6 @@
 # Movie Assignment
 
-A movie catalogue for listing, creating, updating, deleting and searching movies and their cast and creators, with artwork upload.
+A movie catalogue for listing, creating, updating, deleting and searching movies and their cast and creators, with artwork and photo uploads.
 
 - **Frontend:** Svelte + TypeScript
 - **Backend:** two Kotlin Spring Boot services
@@ -17,22 +17,23 @@ A movie catalogue for listing, creating, updating, deleting and searching movies
 └──────┬───────┘     GraphQL    │       │    GraphQL
        │          (subgraph)    ▼       ▼   (subgraph)
        │        ┌──────────────────┐  ┌──────────────────┐
-       │        │  movie-service   │  │  people-service  │
-       └──────▶ │  movies, credits │  │  cast & creators │
-  REST artwork  │  artwork         │  │                  │
-  upload        │  GraphQL :8080   │  │  GraphQL :8081   │
-                │  gRPC    :9091   │  │  gRPC    :9090   │
-                └────────┬─────────┘  └────────┬─────────┘
-                         │  GetPerson ──────▶  │
-                         │  ◀── DeleteCreditsByPerson
-                         └───────── gRPC ──────┘
-                 H2 (movies, credits)    H2 (people)
+       │        │  movie-service   │  │  people-service  │ ◀──┐
+       ├──────▶ │  movies, credits │  │  cast & creators │    │
+       │        │  artwork         │  │  photos          │    │
+       │        │  GraphQL :8080   │  │  GraphQL :8081   │    │
+       │        │  gRPC    :9091   │  │  gRPC    :9090   │    │
+       │        └────────┬─────────┘  └────────┬─────────┘    │
+       │                 │  GetPerson ──────▶  │              │
+       │                 │  ◀── DeleteCreditsByPerson         │
+       │                 └───────── gRPC ──────┘              │
+       │         H2 (movies, credits)    H2 (people)          │
+       └──────────── REST: artwork, photo uploads ────────────┘
 ```
 
-- **movie-web** is the browser app. All data goes through the router as GraphQL. Artwork uploads go straight to `movie-service` over REST.
+- **movie-web** is the browser app. All data goes through the router as GraphQL. Image uploads skip the router and go straight to the service that owns the image over REST: movie artwork to `movie-service`, person photos to `people-service`.
 - **Apollo Router** composes the two services' GraphQL schemas (subgraphs) into one supergraph and splits each query between them. For `movie { credits { person { name } } }`, it gets the movie and credits from `movie-service`, then fetches all the people from `people-service` in one batched call.
 - **movie-service** owns movies, credits (who played or made what) and uploaded artwork. A credit only stores the person's id. It calls `people-service` over gRPC (`GetPerson`) to check the person exists and has the role before adding a credit.
-- **people-service** owns cast and creators. When a person is deleted, it calls `movie-service` over gRPC (`DeleteCreditsByPerson`) to remove their credits, inside the same transaction, so a failed call rolls the delete back.
+- **people-service** owns cast and creators, and their uploaded photos. When a person is deleted, it calls `movie-service` over gRPC (`DeleteCreditsByPerson`) to remove their credits, inside the same transaction, so a failed call rolls the delete back.
 - **[protos](https://github.com/BenWanLH/protos)** holds the `.proto` files for the gRPC contracts (`people/v1`, `movies/v1`). Both services include it as a git submodule at `protos/` and generate their Kotlin code from it at build time.
 - Each service has its own embedded H2 database, so no database server needs to be installed.
 
